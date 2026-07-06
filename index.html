@@ -1,0 +1,1439 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#150A0C">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Feutre">
+<link rel="manifest" href="data:application/manifest+json,%7B%22name%22%3A%22Feutre%20%E2%80%94%20strat%C3%A9gie%20poker%22%2C%22short_name%22%3A%22Feutre%22%2C%22start_url%22%3A%22.%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%23150A0C%22%2C%22theme_color%22%3A%22%23150A0C%22%7D">
+<title>Feutre — préparation stratégique poker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg-void:#150A0C;
+    --felt:#2A1116;
+    --felt-light:#3A1820;
+    --panel:#F6ECDD;
+    --panel-dim:#EBDCC8;
+    --ink:#241417;
+    --ink-dim:#6E5850;
+    --gold:#C9A24E;
+    --gold-bright:#E3C170;
+    --raise:#9E2A45;
+    --raise-bg:#5C1830;
+    --call:#33456B;
+    --call-bg:#1C2740;
+    --fold:#3A332E;
+    --line:rgba(201,162,78,0.28);
+    --font-display:'Shippori Mincho', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'JetBrains Mono', monospace;
+
+    /* card / content theming — overridden by [data-theme="dark"] */
+    --card-bg:#F6ECDD;
+    --card-text:#241417;
+    --card-text-dim:#6E5850;
+    --card-panel-dim:#EBDCC8;
+    --input-bg:#FFFDF9;
+    --input-border:#DCC9AE;
+    --divider:#E3D3BB;
+    --tip-bg:#F0DFC2;
+    --tip-text:#5C4420;
+    --brush-active-raise:rgba(158,42,69,0.15);
+    --brush-active-call:rgba(51,69,107,0.15);
+    --brush-active-fold:rgba(58,51,46,0.12);
+    --shadow:0 18px 40px rgba(36,20,23,0.25);
+  }
+
+  body[data-theme="dark"]{
+    --card-bg:#221317;
+    --card-text:#F1E4D6;
+    --card-text-dim:#B79C89;
+    --card-panel-dim:#2E1B20;
+    --input-bg:#2A171C;
+    --input-border:#4A2E33;
+    --divider:#3A2328;
+    --tip-bg:#3A2418;
+    --tip-text:#E3C170;
+    --brush-active-raise:rgba(158,42,69,0.32);
+    --brush-active-call:rgba(51,69,107,0.32);
+    --brush-active-fold:rgba(183,156,137,0.18);
+    --shadow:0 18px 40px rgba(0,0,0,0.55);
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--bg-void);
+    color:var(--panel);
+    font-family:var(--font-body);
+    min-height:100vh;
+    background-image:
+      radial-gradient(ellipse at 20% -10%, rgba(198,162,77,0.08), transparent 55%),
+      radial-gradient(ellipse at 100% 110%, rgba(60,108,147,0.08), transparent 50%);
+  }
+  a{color:inherit;}
+  button{font-family:inherit;cursor:pointer;}
+  input,select,textarea{font-family:inherit;}
+
+  #app{
+    display:grid;
+    grid-template-columns:88px 1fr;
+    min-height:100vh;
+  }
+
+  /* ---------- RAIL NAV ---------- */
+  .rail{
+    background:linear-gradient(180deg, var(--felt) 0%, #150A0C 100%);
+    background-image:
+      linear-gradient(180deg, var(--felt) 0%, #150A0C 100%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='48' height='24'%3E%3Cpath d='M0 24 A24 24 0 0 1 24 24' fill='none' stroke='rgba(227,193,112,0.05)' stroke-width='1'/%3E%3Cpath d='M24 24 A24 24 0 0 1 48 24' fill='none' stroke='rgba(227,193,112,0.05)' stroke-width='1'/%3E%3Cpath d='M-12 12 A24 24 0 0 1 12 12' fill='none' stroke='rgba(227,193,112,0.04)' stroke-width='1'/%3E%3Cpath d='M36 12 A24 24 0 0 1 60 12' fill='none' stroke='rgba(227,193,112,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+    background-repeat:no-repeat, repeat;
+    border-right:1px solid var(--line);
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:22px 0;
+    gap:6px;
+    position:sticky;
+    top:0;
+    height:100vh;
+  }
+  .rail-brand{
+    width:46px;height:46px;border-radius:50%;
+    border:1.5px solid var(--gold);
+    background:var(--panel);
+    position:relative;
+    margin-bottom:28px;
+    flex-shrink:0;
+  }
+  .mon-suit{
+    position:absolute;top:50%;left:50%;
+    font-size:12px;line-height:1;color:var(--raise);
+    transform:translate(-50%,-50%) rotate(var(--ang)) translateY(-13px) rotate(calc(-1 * var(--ang)));
+  }
+  .mon-suit.center{
+    font-size:6px;color:var(--gold);
+    transform:translate(-50%,-50%);
+  }
+  .rail-btn{
+    width:64px;
+    background:transparent;
+    border:none;
+    color:rgba(243,238,223,0.55);
+    padding:12px 4px;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:6px;
+    border-radius:10px;
+    font-size:10.5px;
+    letter-spacing:0.04em;
+    transition:background 0.15s ease, color 0.15s ease;
+  }
+  .rail-btn .sym{font-size:19px;line-height:1;}
+  .rail-btn:hover{background:rgba(198,162,77,0.09);color:var(--panel);}
+  .rail-btn.active{
+    background:rgba(198,162,77,0.16);
+    color:var(--gold-bright);
+    box-shadow:inset 3px 0 0 var(--gold-bright);
+  }
+  .rail-btn:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;}
+
+  /* ---------- MAIN ---------- */
+  main{padding:36px 44px 80px;max-width:1180px;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;animation:fadein 0.25s ease;}
+  @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
+
+  .page-head{margin-bottom:28px;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:11px;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--gold);margin-bottom:8px;
+  }
+  h1{
+    font-family:var(--font-display);
+    font-weight:700;font-size:34px;margin:0 0 16px;
+    color:var(--panel);
+    position:relative;
+    padding-bottom:14px;
+  }
+  h1::after{
+    content:'';
+    position:absolute;left:1px;bottom:0;width:56px;height:2px;
+    background:var(--gold);
+    box-shadow:0 5px 0 0 rgba(201,162,78,0.45);
+  }
+  .subtitle{color:rgba(243,238,223,0.6);font-size:14.5px;max-width:640px;line-height:1.5;}
+
+  .card{
+    background:var(--card-bg);
+    color:var(--card-text);
+    border-radius:14px;
+    padding:24px 26px;
+    box-shadow:var(--shadow);
+    transition:background 0.2s ease, color 0.2s ease;
+  }
+  .card + .card{margin-top:20px;}
+  .card h2{
+    font-family:var(--font-display);font-size:20px;font-weight:600;
+    margin:0 0 4px;color:var(--card-text);
+  }
+  .card .hint{color:var(--card-text-dim);font-size:13px;margin:0 0 18px;line-height:1.5;}
+
+  /* ---------- profile bar ---------- */
+  .profile-bar{
+    display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+    margin-bottom:22px;
+  }
+  select.profile-select{
+    background:var(--felt-light);color:var(--panel);
+    border:1px solid var(--line);border-radius:8px;
+    padding:9px 12px;font-size:13.5px;font-weight:500;
+  }
+  .btn{
+    border:1px solid var(--line);
+    background:var(--felt-light);
+    color:var(--panel);
+    padding:9px 14px;border-radius:8px;
+    font-size:13px;font-weight:500;
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .btn:hover{background:rgba(198,162,77,0.18);border-color:var(--gold);}
+  .btn:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;}
+  .btn.gold{background:var(--gold);color:#221a08;border-color:var(--gold);font-weight:600;}
+  .btn.gold:hover{background:var(--gold-bright);}
+  .btn.danger{border-color:rgba(163,61,61,0.6);}
+  .btn.danger:hover{background:rgba(163,61,61,0.25);}
+  .btn.small{padding:5px 10px;font-size:12px;}
+  .btn.ghost{background:transparent;}
+
+  /* ---------- range builder controls ---------- */
+  .controls-row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;align-items:center;}
+  .seg{display:flex;background:var(--card-panel-dim);border-radius:9px;padding:3px;gap:2px;flex-wrap:wrap;}
+  .seg button{
+    border:none;background:transparent;padding:8px 13px;border-radius:7px;
+    font-size:12.5px;font-weight:600;color:var(--card-text-dim);
+  }
+  .seg button.active{background:var(--gold);color:#221a08;}
+  select.plain{
+    border:1px solid var(--input-border);background:var(--input-bg);border-radius:8px;
+    padding:8px 12px;font-size:13px;color:var(--card-text);
+  }
+
+  .brush-row{display:flex;gap:8px;align-items:center;margin-bottom:16px;flex-wrap:wrap;}
+  .brush{
+    border:2px solid transparent;border-radius:9px;padding:10px 16px;
+    font-size:13px;font-weight:600;display:flex;align-items:center;gap:7px;
+    background:var(--input-bg);color:var(--card-text);
+    min-height:40px;
+  }
+  .brush .dot{width:11px;height:11px;border-radius:50%;display:inline-block;}
+  .brush[data-b="raise"] .dot{background:var(--raise);}
+  .brush[data-b="call"] .dot{background:var(--call);}
+  .brush[data-b="fold"] .dot{background:var(--fold);}
+  .brush.active[data-b="raise"]{border-color:var(--raise);background:var(--brush-active-raise);}
+  .brush.active[data-b="call"]{border-color:var(--call);background:var(--brush-active-call);}
+  .brush.active[data-b="fold"]{border-color:var(--card-text-dim);background:var(--brush-active-fold);}
+  .brush-hint{font-size:12px;color:var(--card-text-dim);width:100%;margin:-6px 0 4px;}
+
+  /* ---------- grid ---------- */
+  .grid-wrap{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start;}
+  .grid-scroll{
+    overflow-x:auto;
+    -webkit-overflow-scrolling:touch;
+    max-width:560px;
+  }
+  .grid13{
+    display:grid;
+    grid-template-columns:repeat(13, minmax(30px,1fr));
+    gap:3px;
+    width:560px;
+    max-width:100%;
+    user-select:none;
+    touch-action:pan-y;
+  }
+  .cell{
+    aspect-ratio:1/1;
+    background:var(--card-panel-dim);
+    border-radius:5px;
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--font-mono);
+    font-weight:600;font-size:11px;
+    color:var(--card-text-dim);
+    cursor:pointer;
+    transition:transform 0.06s ease;
+    border:1px solid rgba(27,27,22,0.06);
+  }
+  .cell:hover{transform:scale(1.06);}
+  .cell.raise{background:var(--raise);color:#fbe9e9;border-color:#7a2b2b;}
+  .cell.call{background:var(--call);color:#e8f0f7;border-color:#2a4d6b;}
+  .cell.fold{background:var(--fold);color:rgba(243,238,223,0.35);}
+  .cell.diag{font-weight:700;}
+
+  .stats-panel{
+    min-width:220px;flex:1;
+    display:flex;flex-direction:column;gap:10px;
+  }
+  .stat{
+    background:var(--card-panel-dim);border-radius:10px;padding:12px 14px;color:var(--card-text);
+  }
+  .stat .label{font-size:11px;text-transform:uppercase;letter-spacing:0.06em;color:var(--card-text-dim);margin-bottom:4px;}
+  .stat .value{font-family:var(--font-mono);font-size:20px;font-weight:700;}
+  .bar-outer{height:8px;background:#00000012;border-radius:5px;margin-top:8px;overflow:hidden;display:flex;}
+  .bar-seg.raise{background:var(--raise);}
+  .bar-seg.call{background:var(--call);}
+  .bar-seg.fold{background:var(--fold);}
+
+  /* ---------- forms ---------- */
+  .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media (max-width:720px){.form-grid{grid-template-columns:1fr;}}
+  .field label{display:block;font-size:12.5px;font-weight:600;color:var(--card-text-dim);margin-bottom:6px;}
+  .field select, .field input, .field textarea{
+    width:100%;border:1px solid var(--input-border);background:var(--input-bg);border-radius:8px;
+    padding:9px 11px;font-size:13.5px;color:var(--card-text);
+  }
+  .field textarea{resize:vertical;min-height:70px;}
+  .checkbox-field{display:flex;align-items:center;gap:8px;margin-top:6px;}
+  .checkbox-field input{width:auto;}
+
+  .tip-box{
+    margin-top:20px;background:var(--tip-bg);border-left:3px solid var(--gold);
+    border-radius:0 8px 8px 0;padding:14px 16px;font-size:13.5px;color:var(--tip-text);line-height:1.55;
+  }
+
+  /* ---------- notes ---------- */
+  .note-item{
+    border:1px solid var(--divider);border-radius:10px;padding:14px 16px;margin-bottom:12px;
+    display:flex;justify-content:space-between;gap:14px;
+  }
+  .note-item .body{flex:1;}
+  .note-item .name{font-weight:700;font-size:14.5px;margin-bottom:3px;}
+  .note-item .tags{font-size:11.5px;color:var(--gold);font-family:var(--font-mono);margin-bottom:6px;}
+  .note-item .text{font-size:13px;color:var(--card-text-dim);white-space:pre-wrap;line-height:1.5;}
+  .note-actions{display:flex;flex-direction:column;gap:6px;}
+  .empty-state{text-align:center;padding:34px 10px;color:var(--card-text-dim);}
+  .empty-state .big{font-size:32px;margin-bottom:8px;}
+
+  /* ---------- fiche ---------- */
+  .sheet-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;}
+  @media (max-width:820px){.sheet-grid{grid-template-columns:1fr;}}
+  .chip{
+    display:inline-block;background:var(--card-panel-dim);border-radius:20px;
+    padding:5px 12px;font-size:12px;font-weight:600;margin:0 6px 6px 0;
+  }
+  table.mini{width:100%;border-collapse:collapse;font-size:13px;}
+  table.mini th, table.mini td{text-align:left;padding:7px 8px;border-bottom:1px solid var(--divider);}
+  table.mini th{font-size:11px;text-transform:uppercase;letter-spacing:0.04em;color:var(--card-text-dim);}
+  table.mini td.mono{font-family:var(--font-mono);}
+
+  /* ---------- equity ---------- */
+  .hand-row{display:flex;gap:26px;flex-wrap:wrap;margin-bottom:20px;}
+  .hand-block{flex:1;min-width:220px;}
+  .hand-block h3{font-size:14px;margin:0 0 10px;font-family:var(--font-display);}
+  .card-pair{display:flex;gap:8px;}
+  .card-select{display:flex;flex-direction:column;gap:4px;flex:1;}
+  .card-select select{padding:7px 8px;font-size:12.5px;}
+  .board-row{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .board-slot{width:74px;}
+  .board-slot label{font-size:10.5px;color:var(--card-text-dim);display:block;margin-bottom:4px;text-transform:uppercase;letter-spacing:0.04em;}
+  .equity-result{margin-top:22px;}
+  .eq-bar{height:34px;border-radius:8px;overflow:hidden;display:flex;font-family:var(--font-mono);font-weight:700;font-size:12.5px;}
+  .eq-seg{display:flex;align-items:center;justify-content:center;color:#fff;white-space:nowrap;}
+  .eq-legend{display:flex;justify-content:space-between;margin-top:8px;font-size:12px;color:var(--card-text-dim);}
+  .err-msg{color:var(--raise);font-size:13px;margin-top:10px;font-weight:600;}
+  .loading-msg{color:var(--card-text-dim);font-size:13px;margin-top:10px;font-style:italic;}
+
+  /* ---------- misc ---------- */
+  .theme-toggle{
+    position:fixed;top:18px;right:20px;z-index:60;
+    display:flex;align-items:center;gap:7px;
+    background:var(--felt-light);border:1px solid var(--line);
+    color:var(--panel);padding:8px 14px;border-radius:20px;
+    font-size:12.5px;font-weight:600;
+  }
+  .theme-toggle:hover{border-color:var(--gold);}
+  .theme-toggle:focus-visible{outline:2px solid var(--gold-bright);outline-offset:2px;}
+  @media (max-width:640px){
+    .theme-toggle{padding:9px 12px;}
+    .theme-toggle #themeToggleLabel{display:none;}
+  }
+
+  .save-indicator{
+    position:fixed;bottom:22px;right:22px;
+    width:72px;height:72px;border-radius:50%;
+    background:var(--raise);
+    border:2px solid rgba(246,236,221,0.55);
+    color:#F6ECDE;
+    display:flex;align-items:center;justify-content:center;
+    text-align:center;line-height:1.2;
+    font-family:var(--font-display);font-weight:700;font-size:12px;
+    letter-spacing:0.02em;
+    transform:rotate(-9deg) scale(0.82);
+    box-shadow:0 10px 22px rgba(21,10,12,0.4);
+    opacity:0;transition:opacity 0.3s ease, transform 0.3s ease;pointer-events:none;
+    z-index:50;
+  }
+  .save-indicator.show{opacity:1;transform:rotate(-9deg) scale(1);}
+
+  @media print{
+    .rail, .profile-bar, .no-print{display:none !important;}
+    body{background:#fff;color:#000;}
+    main{padding:0;max-width:none;}
+    .card{box-shadow:none;border:1px solid #ccc;}
+    .tab-panel{display:none !important;}
+    #tab-sheet{display:block !important;}
+  }
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important;}
+  }
+
+  @media (max-width:640px){
+    #app{grid-template-columns:56px 1fr;}
+    .rail{width:56px;padding:14px 0;}
+    .rail-brand{width:38px;height:38px;margin-bottom:16px;}
+    .mon-suit{font-size:10px;}
+    .rail-btn{width:44px;font-size:8.5px;padding:9px 2px;}
+    .rail-btn .sym{font-size:16px;}
+    main{padding:20px 14px 70px;}
+    h1{font-size:24px;}
+    .grid13{grid-template-columns:repeat(13, minmax(24px,1fr));}
+    .cell{font-size:9.5px;}
+    .save-indicator{width:58px;height:58px;font-size:10.5px;bottom:16px;right:16px;}
+  }
+</style>
+</head>
+<body data-theme="light">
+
+<button id="themeToggle" class="theme-toggle" title="Changer de thème" aria-label="Basculer entre thème sombre et clair">
+  <span id="themeToggleIcon">☀</span><span id="themeToggleLabel">Clair</span>
+</button>
+
+<div id="app">
+  <nav class="rail" aria-label="Navigation principale">
+    <div class="rail-brand" aria-hidden="true" title="Feutre & Katana">
+      <span class="mon-suit" style="--ang:0deg;">♠</span>
+      <span class="mon-suit" style="--ang:90deg;">♥</span>
+      <span class="mon-suit" style="--ang:180deg;">♦</span>
+      <span class="mon-suit" style="--ang:270deg;">♣</span>
+      <span class="mon-suit center">◆</span>
+    </div>
+    <button class="rail-btn active" data-tab="ranges"><span class="sym">▦</span>Ranges</button>
+    <button class="rail-btn" data-tab="context"><span class="sym">⟐</span>Contexte</button>
+    <button class="rail-btn" data-tab="notes"><span class="sym">✎</span>Notes</button>
+    <button class="rail-btn" data-tab="sheet"><span class="sym">▤</span>Fiche</button>
+    <button class="rail-btn" data-tab="equity"><span class="sym">%</span>Équité</button>
+  </nav>
+
+  <main>
+
+    <!-- ============ RANGES ============ -->
+    <section id="tab-ranges" class="tab-panel active">
+      <div class="page-head">
+        <div class="eyebrow">Range builder</div>
+        <h1>Construis tes ranges</h1>
+        <p class="subtitle">Peins ta grille par position et par scénario. Ce qui n'est pas coloré est considéré comme fold par défaut.</p>
+      </div>
+
+      <div class="profile-bar">
+        <select class="profile-select" id="profileSelect" title="Un profil regroupe toutes tes ranges (une par position et par scénario)"></select>
+        <button class="btn" id="newProfileBtn" title="Créer un nouveau profil vide, par ex. pour un style de table différent">+ Nouveau profil</button>
+        <button class="btn danger" id="deleteProfileBtn" title="Supprimer définitivement le profil actif">Supprimer</button>
+      </div>
+
+      <div class="card">
+        <div class="controls-row">
+          <div class="seg" id="positionSeg"></div>
+          <select class="plain" id="scenarioSelect">
+            <option value="open">Open (RFI)</option>
+            <option value="vsOpenCall">Vs open — call</option>
+            <option value="vsOpen3bet">Vs open — 3-bet</option>
+            <option value="vs3bet">Vs 3-bet</option>
+          </select>
+          <button class="btn small" id="loadStandardBtn" title="Remplit la grille avec une range d'ouverture standard, à ajuster ensuite">Charger range standard</button>
+          <button class="btn small ghost" id="clearGridBtn" title="Efface toutes les couleurs de la grille active">Vider la grille</button>
+        </div>
+
+        <div class="brush-row">
+          <span style="font-size:12.5px;color:var(--card-text-dim);font-weight:600;">Pinceau :</span>
+          <button class="brush active" data-b="raise" title="Choisir la couleur Raise puis clique-glisse sur la grille"><span class="dot"></span>Raise</button>
+          <button class="brush" data-b="call" title="Choisir la couleur Call puis clique-glisse sur la grille"><span class="dot"></span>Call</button>
+          <button class="brush" data-b="fold" title="Choisir la couleur Fold puis clique-glisse sur la grille"><span class="dot"></span>Fold</button>
+        </div>
+        <p class="brush-hint">💡 Choisis un pinceau, puis clique et glisse sur la grille pour peindre plusieurs mains d'un coup. Reclique sur une main pour l'effacer.</p>
+
+        <div class="grid-wrap">
+          <div class="grid-scroll">
+            <div class="grid13" id="grid13" role="grid" aria-label="Grille de mains 13 par 13"></div>
+          </div>
+          <div class="stats-panel" id="statsPanel"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTEXTE ============ -->
+    <section id="tab-context" class="tab-panel">
+      <div class="page-head">
+        <div class="eyebrow">Avant de s'asseoir</div>
+        <h1>Contexte de la partie</h1>
+        <p class="subtitle">Renseigne le contexte pour obtenir un rappel adapté et garder une fiche de stratégie à jour.</p>
+      </div>
+
+      <div class="card">
+        <h2>Format &amp; table</h2>
+        <div class="form-grid">
+          <div class="field">
+            <label for="ctxFormat">Format</label>
+            <select id="ctxFormat">
+              <option value="cash">Cash game</option>
+              <option value="tournoi">Tournoi (MTT / SNG)</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ctxTableSize">Taille de table</label>
+            <select id="ctxTableSize">
+              <option value="fullring">Full ring (9-10 joueurs)</option>
+              <option value="6max">6-max</option>
+              <option value="hu">Heads-up</option>
+            </select>
+          </div>
+          <div class="field" id="ctxStageField">
+            <label for="ctxStage">Stade du tournoi</label>
+            <select id="ctxStage">
+              <option value="debut">Début (stacks profonds)</option>
+              <option value="milieu">Milieu de tournoi</option>
+              <option value="bulle">Bulle</option>
+              <option value="finale">Table finale</option>
+            </select>
+          </div>
+          <div class="field" id="ctxSpeedField">
+            <label for="ctxSpeed">Vitesse de structure</label>
+            <select id="ctxSpeed">
+              <option value="normale">Normale / lente</option>
+              <option value="turbo">Turbo</option>
+              <option value="hyper">Hyper-turbo</option>
+            </select>
+          </div>
+          <div class="field" id="ctxRakeField">
+            <label for="ctxRake">Rake</label>
+            <select id="ctxRake">
+              <option value="faible">Faible</option>
+              <option value="moyen">Moyen</option>
+              <option value="eleve">Élevé</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="ctxOpponents">Type d'adversaires dominant</label>
+            <select id="ctxOpponents">
+              <option value="loose-passive">Loose-passif (calling stations)</option>
+              <option value="loose-agressif">Loose-agressif</option>
+              <option value="tight-passive">Tight-passif</option>
+              <option value="tight-agressif">Tight-agressif (regs)</option>
+              <option value="mixte">Table mixte</option>
+            </select>
+          </div>
+        </div>
+        <div class="checkbox-field">
+          <input type="checkbox" id="ctxAntes">
+          <label for="ctxAntes" style="margin:0;">Antes en jeu</label>
+        </div>
+
+        <div class="tip-box" id="ctxTip"></div>
+      </div>
+    </section>
+
+    <!-- ============ NOTES ============ -->
+    <section id="tab-notes" class="tab-panel">
+      <div class="page-head">
+        <div class="eyebrow">Historique de table</div>
+        <h1>Notes joueurs</h1>
+        <p class="subtitle">Consigne les tendances des adversaires que tu croises régulièrement.</p>
+      </div>
+
+      <div class="card">
+        <div class="controls-row" style="justify-content:space-between;">
+          <h2 style="margin:0;">Adversaires suivis</h2>
+          <button class="btn gold small" id="addNoteBtn">+ Ajouter une note</button>
+        </div>
+        <div id="noteForm" style="display:none;margin:16px 0;padding:16px;background:var(--panel-dim);border-radius:10px;">
+          <div class="form-grid">
+            <div class="field">
+              <label for="noteName">Nom / pseudo</label>
+              <input type="text" id="noteName" placeholder="ex : Marc, 'CO_shark22'...">
+            </div>
+            <div class="field">
+              <label for="noteTags">Tendances clés (mots-clés)</label>
+              <input type="text" id="noteTags" placeholder="ex : bluffe souvent, 3-bet léger, calling station">
+            </div>
+          </div>
+          <div class="field" style="margin-top:12px;">
+            <label for="noteText">Notes détaillées</label>
+            <textarea id="noteText" placeholder="Comportements observés, lignes de jeu, exploits possibles..."></textarea>
+          </div>
+          <div style="margin-top:12px;display:flex;gap:8px;">
+            <button class="btn gold small" id="saveNoteBtn">Enregistrer</button>
+            <button class="btn ghost small" id="cancelNoteBtn">Annuler</button>
+          </div>
+        </div>
+        <div id="notesList"></div>
+      </div>
+    </section>
+
+    <!-- ============ FICHE ============ -->
+    <section id="tab-sheet" class="tab-panel">
+      <div class="page-head">
+        <div class="eyebrow">Prêt à jouer</div>
+        <h1>Fiche de stratégie</h1>
+        <p class="subtitle">Un résumé condensé à consulter avant — ou pendant — la partie.</p>
+      </div>
+
+      <div class="controls-row no-print">
+        <button class="btn gold" id="printBtn">Imprimer / exporter en PDF</button>
+      </div>
+
+      <div class="sheet-grid">
+        <div class="card">
+          <h2>Profil actif</h2>
+          <div id="sheetProfileName" style="font-family:var(--font-mono);font-size:15px;font-weight:700;margin-bottom:14px;"></div>
+          <h2 style="margin-top:18px;">Ranges d'ouverture par position</h2>
+          <table class="mini" id="sheetRangesTable"></table>
+        </div>
+
+        <div class="card">
+          <h2>Contexte de la partie</h2>
+          <div id="sheetContext"></div>
+
+          <h2 style="margin-top:20px;">Sizings standards</h2>
+          <p class="hint" style="margin-top:-8px;">Fixe-les à l'avance pour éviter d'improviser en cours de partie.</p>
+          <div class="form-grid">
+            <div class="field">
+              <label for="setOpen">Open raise</label>
+              <input type="text" id="setOpen" placeholder="ex : 2.5x">
+            </div>
+            <div class="field">
+              <label for="set3bet">3-bet</label>
+              <input type="text" id="set3bet" placeholder="ex : 3x l'open">
+            </div>
+            <div class="field">
+              <label for="set4bet">4-bet</label>
+              <input type="text" id="set4bet" placeholder="ex : 2.2x le 3-bet">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Notes joueurs à la table</h2>
+        <div id="sheetNotes"></div>
+      </div>
+    </section>
+
+    <!-- ============ EQUITY ============ -->
+    <section id="tab-equity" class="tab-panel">
+      <div class="page-head">
+        <div class="eyebrow">Vérification rapide</div>
+        <h1>Calculateur d'équité</h1>
+        <p class="subtitle">Compare deux mains (préflop ou avec un board donné) — estimation par simulation Monte-Carlo.</p>
+      </div>
+
+      <div class="card">
+        <div class="hand-row">
+          <div class="hand-block">
+            <h3>Main A</h3>
+            <div class="card-pair" id="handA"></div>
+          </div>
+          <div class="hand-block">
+            <h3>Main B</h3>
+            <div class="card-pair" id="handB"></div>
+          </div>
+        </div>
+
+        <h3 style="font-size:13px;color:var(--ink-dim);margin-bottom:8px;">Board (laisse en « — » pour un calcul préflop)</h3>
+        <div class="board-row" id="boardRow"></div>
+
+        <button class="btn gold" id="calcEquityBtn">Calculer l'équité</button>
+        <div id="equityError" class="err-msg"></div>
+        <div id="equityLoading" class="loading-msg" style="display:none;">Simulation en cours…</div>
+
+        <div class="equity-result" id="equityResult" style="display:none;">
+          <div class="eq-bar">
+            <div class="eq-seg" id="eqSegA" style="background:var(--raise);"></div>
+            <div class="eq-seg" id="eqSegTie" style="background:var(--ink-dim);"></div>
+            <div class="eq-seg" id="eqSegB" style="background:var(--call);"></div>
+          </div>
+          <div class="eq-legend">
+            <span>Main A</span>
+            <span>Égalité</span>
+            <span>Main B</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<div class="save-indicator" id="saveIndicator">Sauvé</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONSTANTS
+  ============================================================ */
+  var RANKS = ['A','K','Q','J','T','9','8','7','6','5','4','3','2'];
+  var RANK_VALUES = {A:14,K:13,Q:12,J:11,T:10,9:9,8:8,7:7,6:6,5:5,4:4,3:3,2:2};
+  var POSITIONS = ['UTG','HJ','CO','BTN','SB','BB'];
+  var SUITS = [{v:'s',sym:'♠'},{v:'h',sym:'♥'},{v:'d',sym:'♦'},{v:'c',sym:'♣'}];
+  var STORAGE_KEY = 'poker-strategie-data';
+  var hasClaudeStorage = !!window.storage;
+
+  function storageGet(key){
+    if(hasClaudeStorage) return window.storage.get(key);
+    try{
+      var raw = localStorage.getItem(key);
+      return Promise.resolve(raw!==null ? {key:key, value:raw} : null);
+    }catch(e){ return Promise.reject(e); }
+  }
+  function storageSet(key, value){
+    if(hasClaudeStorage) return window.storage.set(key, value, false);
+    try{
+      localStorage.setItem(key, value);
+      return Promise.resolve({key:key, value:value});
+    }catch(e){ return Promise.reject(e); }
+  }
+
+  var STANDARD_OPEN = {
+    UTG:["77+","ATs+","KTs+","QTs+","JTs","T9s","98s","AJo+","KQo"],
+    HJ:["66+","A9s+","K9s+","Q9s+","J9s+","T8s+","98s","87s","76s","ATo+","KJo+"],
+    CO:["55+","A7s+","K8s+","Q8s+","J8s+","T7s+","97s+","86s+","76s","65s","A9o+","KTo+","QTo+"],
+    BTN:["22+","A2s+","K2s+","Q4s+","J6s+","T6s+","96s+","85s+","74s+","64s+","53s+","A2o+","K7o+","Q9o+","J9o+","T9o"],
+    SB:["33+","A5s+","K7s+","Q8s+","J8s+","T8s+","97s+","86s+","76s","65s","A7o+","KTo+","QTo+"],
+    BB:[]
+  };
+
+  /* ============================================================
+     STATE
+  ============================================================ */
+  var state = {
+    activeProfileId:null,
+    profiles:[],
+    context:{
+      format:'cash', tableSize:'6max', stage:'debut', speed:'normale',
+      rake:'moyen', opponents:'mixte', antes:false
+    },
+    playerNotes:[],
+    settings:{open:'', threebet:'', fourbet:''},
+    theme:'light'
+  };
+
+  var ui = {
+    activePosition:'UTG',
+    activeScenario:'open',
+    activeBrush:'raise',
+    painting:false,
+    editingNoteId:null
+  };
+
+  function uid(){ return Math.random().toString(36).slice(2,10)+Date.now().toString(36); }
+
+  function makeProfile(name){
+    var ranges = {};
+    POSITIONS.forEach(function(p){
+      ranges[p] = {open:{}, vsOpenCall:{}, vsOpen3bet:{}, vs3bet:{}};
+    });
+    return {id:uid(), name:name||'Profil standard', ranges:ranges};
+  }
+
+  /* ============================================================
+     PERSISTENCE
+  ============================================================ */
+  var saveTimer = null;
+  function scheduleSave(){
+    if(saveTimer) clearTimeout(saveTimer);
+    saveTimer = setTimeout(doSave, 500);
+  }
+  function doSave(){
+    storageSet(STORAGE_KEY, JSON.stringify(state)).then(function(res){
+      if(res){ flashSaved(); }
+    }).catch(function(err){ console.error('Erreur de sauvegarde', err); });
+  }
+  function flashSaved(){
+    var el = document.getElementById('saveIndicator');
+    el.classList.add('show');
+    setTimeout(function(){ el.classList.remove('show'); }, 1200);
+  }
+  function loadState(){
+    storageGet(STORAGE_KEY).then(function(res){
+      if(res && res.value){
+        try{
+          var parsed = JSON.parse(res.value);
+          state = Object.assign(state, parsed);
+        }catch(e){ console.error('Données corrompues', e); }
+      }
+      afterLoad();
+    }).catch(function(){ afterLoad(); });
+  }
+  function afterLoad(){
+    if(!state.profiles || state.profiles.length===0){
+      state.profiles = [makeProfile('Profil standard')];
+    }
+    if(!state.activeProfileId || !state.profiles.some(function(p){return p.id===state.activeProfileId;})){
+      state.activeProfileId = state.profiles[0].id;
+    }
+    applyTheme();
+    renderProfileSelect();
+    renderPositionSeg();
+    renderGrid();
+    renderContextForm();
+    renderNotes();
+    renderSheet();
+    renderEquitySelectors();
+  }
+
+  function applyTheme(){
+    var theme = state.theme==='light' ? 'light' : 'dark';
+    document.body.setAttribute('data-theme', theme);
+    var icon = document.getElementById('themeToggleIcon');
+    var label = document.getElementById('themeToggleLabel');
+    if(theme==='dark'){ icon.textContent='☀'; label.textContent='Clair'; }
+    else { icon.textContent='☾'; label.textContent='Sombre'; }
+  }
+
+  function activeProfile(){
+    return state.profiles.filter(function(p){return p.id===state.activeProfileId;})[0];
+  }
+
+  /* ============================================================
+     RANGE PARSER  ("77+", "ATs+", "KQo", "AA" ...)
+  ============================================================ */
+  function idx(r){ return RANKS.indexOf(r); }
+
+  function expandToken(token){
+    var out = [];
+    var plus = token.slice(-1)==='+';
+    var body = plus ? token.slice(0,-1) : token;
+
+    if(body.length===2 && body[0]===body[1]){
+      // pair, e.g. "77" or "77+"
+      var i0 = idx(body[0]);
+      if(plus){
+        for(var i=i0;i>=0;i--){ out.push(RANKS[i]+RANKS[i]); }
+      } else {
+        out.push(body);
+      }
+      return out;
+    }
+    if(body.length===3){
+      var r1=body[0], r2=body[1], suf=body[2]; // suf = 's' or 'o'
+      var i1 = idx(r1), i2 = idx(r2);
+      if(plus){
+        // second rank climbs from i2 up to i1+1 (decreasing index)
+        for(var k=i2;k>i1;k--){
+          out.push(r1+RANKS[k]+suf);
+        }
+      } else {
+        out.push(body);
+      }
+      return out;
+    }
+    return out;
+  }
+
+  function labelToKey(label){
+    // canonical label already matches our cell-label format
+    return label;
+  }
+
+  function applyStandardRange(position){
+    var profile = activeProfile();
+    var tokens = STANDARD_OPEN[position] || [];
+    var target = {};
+    tokens.forEach(function(tok){
+      expandToken(tok).forEach(function(lbl){ target[lbl] = 'raise'; });
+    });
+    profile.ranges[position].open = target;
+    scheduleSave();
+  }
+
+  /* ============================================================
+     GRID
+  ============================================================ */
+  function cellLabel(i,j){
+    if(i===j) return RANKS[i]+RANKS[j];
+    if(i<j) return RANKS[i]+RANKS[j]+'s';
+    return RANKS[j]+RANKS[i]+'o';
+  }
+
+  function renderGrid(){
+    var grid = document.getElementById('grid13');
+    grid.innerHTML = '';
+    var profile = activeProfile();
+    var data = profile.ranges[ui.activePosition][ui.activeScenario];
+
+    for(var i=0;i<13;i++){
+      for(var j=0;j<13;j++){
+        var label = cellLabel(i,j);
+        var cellState = data[label];
+        var div = document.createElement('div');
+        div.className = 'cell' + (i===j?' diag':'') + (cellState?(' '+cellState):'');
+        div.textContent = label;
+        div.dataset.label = label;
+        div.setAttribute('role','gridcell');
+        div.tabIndex = 0;
+        div.addEventListener('pointerdown', function(ev){
+          ui.painting = true;
+          paintCell(ev.currentTarget);
+        });
+        div.addEventListener('pointerenter', function(ev){
+          if(ui.painting) paintCell(ev.currentTarget);
+        });
+        div.addEventListener('keydown', function(ev){
+          if(ev.key==='Enter' || ev.key===' '){
+            ev.preventDefault();
+            paintCell(ev.currentTarget);
+          }
+        });
+        grid.appendChild(div);
+      }
+    }
+    document.addEventListener('pointerup', function(){ ui.painting=false; });
+    renderStats();
+  }
+
+  function paintCell(el){
+    var profile = activeProfile();
+    var label = el.dataset.label;
+    var data = profile.ranges[ui.activePosition][ui.activeScenario];
+    var brush = ui.activeBrush;
+    if(data[label]===brush){
+      delete data[label]; // toggle off if clicking same brush again
+      el.className = 'cell' + (label.length===2?' diag':'');
+    } else {
+      data[label] = brush;
+      el.className = 'cell ' + brush + (label.length===2?' diag':'');
+    }
+    renderStats();
+    scheduleSave();
+  }
+
+  function comboCount(label){
+    if(label.length===2) return 6; // pair
+    if(label[2]==='s') return 4;
+    return 12; // offsuit
+  }
+
+  function renderStats(){
+    var profile = activeProfile();
+    var data = profile.ranges[ui.activePosition][ui.activeScenario];
+    var totals = {raise:0, call:0, fold:0};
+    Object.keys(data).forEach(function(label){
+      var st = data[label];
+      if(totals[st]!==undefined) totals[st]+= comboCount(label);
+    });
+    var totalCombos = 1326;
+    var used = totals.raise+totals.call+totals.fold;
+    var pct = function(n){ return ((n/totalCombos)*100).toFixed(1); };
+
+    var panel = document.getElementById('statsPanel');
+    panel.innerHTML =
+      '<div class="stat"><div class="label">Position — scénario</div><div class="value" style="font-size:15px;">'+ui.activePosition+' · '+scenarioLabel(ui.activeScenario)+'</div></div>'+
+      '<div class="stat"><div class="label">Combos sélectionnés</div><div class="value">'+used+' / '+totalCombos+' <span style="font-size:12px;color:var(--ink-dim);">('+pct(used)+'%)</span></div>'+
+        '<div class="bar-outer">'+
+          '<div class="bar-seg raise" style="width:'+pct(totals.raise)+'%"></div>'+
+          '<div class="bar-seg call" style="width:'+pct(totals.call)+'%"></div>'+
+          '<div class="bar-seg fold" style="width:'+pct(totals.fold)+'%"></div>'+
+        '</div>'+
+      '</div>'+
+      '<div class="stat"><div class="label">Détail</div><div style="font-size:13px;line-height:1.9;">'+
+        '<span style="color:var(--raise);font-weight:700;">■</span> Raise : '+totals.raise+' combos ('+pct(totals.raise)+'%)<br>'+
+        '<span style="color:var(--call);font-weight:700;">■</span> Call : '+totals.call+' combos ('+pct(totals.call)+'%)<br>'+
+        '<span style="color:var(--fold);font-weight:700;">■</span> Fold : '+totals.fold+' combos ('+pct(totals.fold)+'%)'+
+      '</div></div>';
+  }
+
+  function scenarioLabel(s){
+    return {open:'Open (RFI)', vsOpenCall:'Vs open — call', vsOpen3bet:'Vs open — 3-bet', vs3bet:'Vs 3-bet'}[s] || s;
+  }
+
+  function renderPositionSeg(){
+    var seg = document.getElementById('positionSeg');
+    seg.innerHTML = '';
+    POSITIONS.forEach(function(p){
+      var b = document.createElement('button');
+      b.textContent = p;
+      if(p===ui.activePosition) b.className='active';
+      b.addEventListener('click', function(){
+        ui.activePosition = p;
+        renderPositionSeg();
+        renderGrid();
+      });
+      seg.appendChild(b);
+    });
+  }
+
+  /* ============================================================
+     PROFILES
+  ============================================================ */
+  function renderProfileSelect(){
+    var sel = document.getElementById('profileSelect');
+    sel.innerHTML = '';
+    state.profiles.forEach(function(p){
+      var o = document.createElement('option');
+      o.value = p.id; o.textContent = p.name;
+      if(p.id===state.activeProfileId) o.selected = true;
+      sel.appendChild(o);
+    });
+  }
+
+  /* ============================================================
+     CONTEXT TAB
+  ============================================================ */
+  function renderContextForm(){
+    document.getElementById('ctxFormat').value = state.context.format;
+    document.getElementById('ctxTableSize').value = state.context.tableSize;
+    document.getElementById('ctxStage').value = state.context.stage;
+    document.getElementById('ctxSpeed').value = state.context.speed;
+    document.getElementById('ctxRake').value = state.context.rake;
+    document.getElementById('ctxOpponents').value = state.context.opponents;
+    document.getElementById('ctxAntes').checked = !!state.context.antes;
+    toggleContextFields();
+    renderContextTip();
+  }
+  function toggleContextFields(){
+    var isTournoi = state.context.format==='tournoi';
+    document.getElementById('ctxStageField').style.display = isTournoi ? '' : 'none';
+    document.getElementById('ctxSpeedField').style.display = isTournoi ? '' : 'none';
+    document.getElementById('ctxRakeField').style.display = isTournoi ? 'none' : '';
+  }
+  function renderContextTip(){
+    var c = state.context;
+    var tips = [];
+    if(c.format==='tournoi'){
+      if(c.stage==='bulle') tips.push("Bulle : resserre tes calls, exploite la pression ICM sur les stacks moyens et élargis tes ranges de vol face aux stacks profonds prudents.");
+      if(c.stage==='finale') tips.push("Table finale : pense push/fold sur les stacks courts, ajuste tes ranges à l'ICM plutôt qu'à l'équité brute.");
+      if(c.stage==='debut') tips.push("Début de tournoi : jeu profond, privilégie la valeur et la patience, les ranges de départ restent proches du cash game.");
+      if(c.speed==='turbo' || c.speed==='hyper') tips.push("Structure rapide : moins de place pour le postflop fin, favorise des décisions préflop plus tranchées.");
+      if(c.antes) tips.push("Antes en jeu : élargis tes ranges d'ouverture et de vol de blinds, le pot est proportionnellement plus gros.");
+    } else {
+      if(c.rake==='eleve') tips.push("Rake élevé : resserre les ranges marginales et les limps, la rentabilité des petits pots est réduite.");
+    }
+    if(c.opponents==='loose-passive') tips.push("Table loose-passive : value bet plus large, réduis les bluffs, les calling stations paient trop souvent pour bluffer.");
+    if(c.opponents==='tight-agressif') tips.push("Adversaires tight-agressifs : attention aux 3-bets, resserre tes calls et prépare des 4-bets polarisés.");
+    if(c.opponents==='loose-agressif') tips.push("Table loose-agressive : laisse venir avec des mains fortes, exploite l'agressivité par des relances/check-raises value.");
+    if(c.tableSize==='hu') tips.push("Heads-up : les ranges d'ouverture s'élargissent drastiquement, quasiment toutes les mains jouables au bouton.");
+
+    if(tips.length===0) tips.push("Renseigne le contexte pour recevoir des rappels stratégiques adaptés à la partie.");
+    document.getElementById('ctxTip').innerHTML = tips.map(function(t){return '<p style="margin:0 0 8px;">'+t+'</p>';}).join('');
+  }
+
+  /* ============================================================
+     NOTES TAB
+  ============================================================ */
+  function renderNotes(){
+    var list = document.getElementById('notesList');
+    if(state.playerNotes.length===0){
+      list.innerHTML = '<div class="empty-state"><div class="big">♣</div>Aucune note pour l\'instant. Ajoute les tendances d\'un adversaire récurrent.</div>';
+      return;
+    }
+    list.innerHTML = '';
+    state.playerNotes.forEach(function(n){
+      var div = document.createElement('div');
+      div.className = 'note-item';
+      div.innerHTML =
+        '<div class="body">'+
+          '<div class="name">'+escapeHtml(n.name)+'</div>'+
+          (n.tags?'<div class="tags">'+escapeHtml(n.tags)+'</div>':'')+
+          '<div class="text">'+escapeHtml(n.notes)+'</div>'+
+        '</div>'+
+        '<div class="note-actions">'+
+          '<button class="btn small ghost" data-edit="'+n.id+'">Modifier</button>'+
+          '<button class="btn small danger" data-del="'+n.id+'">Supprimer</button>'+
+        '</div>';
+      list.appendChild(div);
+    });
+    list.querySelectorAll('[data-edit]').forEach(function(btn){
+      btn.addEventListener('click', function(){ openNoteForm(btn.dataset.edit); });
+    });
+    list.querySelectorAll('[data-del]').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        state.playerNotes = state.playerNotes.filter(function(n){return n.id!==btn.dataset.del;});
+        renderNotes(); renderSheet(); scheduleSave();
+      });
+    });
+  }
+  function escapeHtml(s){
+    return (s||'').replace(/[&<>"']/g, function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+  function openNoteForm(id){
+    ui.editingNoteId = id || null;
+    var form = document.getElementById('noteForm');
+    form.style.display = 'block';
+    if(id){
+      var n = state.playerNotes.filter(function(x){return x.id===id;})[0];
+      document.getElementById('noteName').value = n.name;
+      document.getElementById('noteTags').value = n.tags;
+      document.getElementById('noteText').value = n.notes;
+    } else {
+      document.getElementById('noteName').value = '';
+      document.getElementById('noteTags').value = '';
+      document.getElementById('noteText').value = '';
+    }
+  }
+
+  /* ============================================================
+     FICHE (SUMMARY SHEET)
+  ============================================================ */
+  function renderSheet(){
+    var profile = activeProfile();
+    document.getElementById('sheetProfileName').textContent = profile.name;
+
+    var rows = '<tr><th>Position</th><th>Combos raise</th><th>% de mains</th></tr>';
+    POSITIONS.forEach(function(p){
+      var data = profile.ranges[p].open;
+      var total = 0;
+      Object.keys(data).forEach(function(l){ if(data[l]==='raise') total += comboCount(l); });
+      rows += '<tr><td>'+p+'</td><td class="mono">'+total+' / 1326</td><td class="mono">'+((total/1326)*100).toFixed(1)+'%</td></tr>';
+    });
+    document.getElementById('sheetRangesTable').innerHTML = rows;
+
+    var c = state.context;
+    var chips = [
+      c.format==='cash' ? 'Cash game' : 'Tournoi',
+      c.tableSize==='fullring' ? 'Full ring' : (c.tableSize==='6max' ? '6-max' : 'Heads-up'),
+      c.opponents
+    ];
+    if(c.format==='tournoi'){ chips.push('Stade : '+c.stage); chips.push('Structure : '+c.speed); if(c.antes) chips.push('Antes'); }
+    else { chips.push('Rake : '+c.rake); }
+    document.getElementById('sheetContext').innerHTML = chips.map(function(t){return '<span class="chip">'+escapeHtml(t)+'</span>';}).join('');
+
+    document.getElementById('setOpen').value = state.settings.open;
+    document.getElementById('set3bet').value = state.settings.threebet;
+    document.getElementById('set4bet').value = state.settings.fourbet;
+
+    var notesHtml = state.playerNotes.length
+      ? state.playerNotes.map(function(n){
+          return '<p style="margin:0 0 10px;"><strong>'+escapeHtml(n.name)+'</strong>'+(n.tags?' — <span style="color:var(--gold-bright,#8a6d1f);">'+escapeHtml(n.tags)+'</span>':'')+'<br><span style="color:var(--ink-dim);font-size:13px;">'+escapeHtml(n.notes)+'</span></p>';
+        }).join('')
+      : '<p style="color:var(--ink-dim);">Aucune note enregistrée.</p>';
+    document.getElementById('sheetNotes').innerHTML = notesHtml;
+  }
+
+  /* ============================================================
+     EQUITY — hand evaluator + monte carlo
+  ============================================================ */
+  function fullDeck(){
+    var deck = [];
+    Object.keys(RANK_VALUES).forEach(function(r){
+      SUITS.forEach(function(s){ deck.push({r:RANK_VALUES[r], s:s.v}); });
+    });
+    return deck;
+  }
+  function cardKey(c){ return c.r+c.s; }
+
+  function combinations5of7(arr){
+    var res = [];
+    for(var a=0;a<7;a++)
+    for(var b=a+1;b<7;b++)
+    for(var c=b+1;c<7;c++)
+    for(var d=c+1;d<7;d++)
+    for(var e=d+1;e<7;e++){
+      res.push([arr[a],arr[b],arr[c],arr[d],arr[e]]);
+    }
+    return res;
+  }
+
+  function evaluate5(cards){
+    var ranksSorted = cards.map(function(c){return c.r;}).sort(function(a,b){return b-a;});
+    var suits = cards.map(function(c){return c.s;});
+    var isFlush = suits.every(function(s){return s===suits[0];});
+    var counts = {};
+    ranksSorted.forEach(function(r){ counts[r]=(counts[r]||0)+1; });
+    var groups = Object.keys(counts).map(function(r){return {r:+r,c:counts[r]};})
+      .sort(function(a,b){ return (b.c-a.c) || (b.r-a.r); });
+
+    var uniq = [];
+    ranksSorted.forEach(function(r){ if(uniq.indexOf(r)===-1) uniq.push(r); });
+    var isStraight=false, straightHigh=0;
+    if(uniq.length===5){
+      if(uniq[0]-uniq[4]===4){ isStraight=true; straightHigh=uniq[0]; }
+      else if(uniq[0]===14 && uniq[1]===5 && uniq[2]===4 && uniq[3]===3 && uniq[4]===2){ isStraight=true; straightHigh=5; }
+    }
+    if(isStraight && isFlush) return [8, straightHigh];
+    if(groups[0].c===4) return [7, groups[0].r, groups[1].r];
+    if(groups[0].c===3 && groups[1] && groups[1].c===2) return [6, groups[0].r, groups[1].r];
+    if(isFlush) return [5].concat(ranksSorted);
+    if(isStraight) return [4, straightHigh];
+    if(groups[0].c===3) return [3, groups[0].r].concat(groups.slice(1).map(function(g){return g.r;}));
+    if(groups[0].c===2 && groups[1] && groups[1].c===2){
+      var hi = Math.max(groups[0].r, groups[1].r), lo = Math.min(groups[0].r, groups[1].r);
+      return [2, hi, lo, groups[2].r];
+    }
+    if(groups[0].c===2) return [1, groups[0].r].concat(groups.slice(1).map(function(g){return g.r;}));
+    return [0].concat(ranksSorted);
+  }
+
+  function evaluate7(cards7){
+    var combos = combinations5of7(cards7);
+    var best = null;
+    combos.forEach(function(combo){
+      var score = evaluate5(combo);
+      if(!best || compareScore(score,best)>0) best = score;
+    });
+    return best;
+  }
+  function compareScore(a,b){
+    var len = Math.max(a.length,b.length);
+    for(var i=0;i<len;i++){
+      var av=a[i]||0, bv=b[i]||0;
+      if(av!==bv) return av-bv;
+    }
+    return 0;
+  }
+  function shuffle(arr){
+    for(var i=arr.length-1;i>0;i--){
+      var j = Math.floor(Math.random()*(i+1));
+      var tmp=arr[i]; arr[i]=arr[j]; arr[j]=tmp;
+    }
+    return arr;
+  }
+
+  function renderEquitySelectors(){
+    function makeCardSelect(prefix){
+      var wrap = document.createElement('div');
+      wrap.className = 'card-select';
+      var rankSel = document.createElement('select');
+      Object.keys(RANK_VALUES).forEach(function(r){
+        var o=document.createElement('option'); o.value=r; o.textContent=r; rankSel.appendChild(o);
+      });
+      rankSel.id = prefix+'-rank';
+      var suitSel = document.createElement('select');
+      SUITS.forEach(function(s){
+        var o=document.createElement('option'); o.value=s.v; o.textContent=s.sym+' '+s.v; suitSel.appendChild(o);
+      });
+      suitSel.id = prefix+'-suit';
+      wrap.appendChild(rankSel); wrap.appendChild(suitSel);
+      return wrap;
+    }
+    var handA = document.getElementById('handA');
+    var handB = document.getElementById('handB');
+    handA.appendChild(makeCardSelect('a1'));
+    handA.appendChild(makeCardSelect('a2'));
+    handB.appendChild(makeCardSelect('b1'));
+    handB.appendChild(makeCardSelect('b2'));
+    document.getElementById('a2-rank').value='K';
+    document.getElementById('a1-suit').value='s'; document.getElementById('a2-suit').value='s';
+    document.getElementById('b1-rank').value='Q'; document.getElementById('b2-rank').value='Q';
+    document.getElementById('b1-suit').value='h'; document.getElementById('b2-suit').value='d';
+
+    var boardRow = document.getElementById('boardRow');
+    var boardLabels = ['Flop 1','Flop 2','Flop 3','Turn','River'];
+    boardLabels.forEach(function(lbl, i){
+      var slot = document.createElement('div');
+      slot.className = 'board-slot';
+      var label = document.createElement('label');
+      label.textContent = lbl;
+      var rankSel = document.createElement('select');
+      rankSel.id = 'board'+i+'-rank';
+      var noneOpt = document.createElement('option'); noneOpt.value=''; noneOpt.textContent='—';
+      rankSel.appendChild(noneOpt);
+      Object.keys(RANK_VALUES).forEach(function(r){
+        var o=document.createElement('option'); o.value=r; o.textContent=r; rankSel.appendChild(o);
+      });
+      var suitSel = document.createElement('select');
+      suitSel.id = 'board'+i+'-suit';
+      var noneOpt2 = document.createElement('option'); noneOpt2.value=''; noneOpt2.textContent='—';
+      suitSel.appendChild(noneOpt2);
+      SUITS.forEach(function(s){
+        var o=document.createElement('option'); o.value=s.v; o.textContent=s.sym; suitSel.appendChild(o);
+      });
+      slot.appendChild(label); slot.appendChild(rankSel); slot.appendChild(suitSel);
+      boardRow.appendChild(slot);
+    });
+  }
+
+  function readCard(prefix){
+    var r = document.getElementById(prefix+'-rank').value;
+    var s = document.getElementById(prefix+'-suit').value;
+    if(!r || !s) return null;
+    return {r:RANK_VALUES[r], s:s};
+  }
+
+  function runEquityCalc(){
+    var errEl = document.getElementById('equityError');
+    var loadEl = document.getElementById('equityLoading');
+    var resEl = document.getElementById('equityResult');
+    errEl.textContent = '';
+    resEl.style.display = 'none';
+
+    var a1=readCard('a1'), a2=readCard('a2'), b1=readCard('b1'), b2=readCard('b2');
+    if(!a1||!a2||!b1||!b2){ errEl.textContent = "Sélectionne les deux cartes des deux mains."; return; }
+
+    var board = [];
+    for(var i=0;i<5;i++){
+      var c = readCard('board'+i);
+      if(c) board.push(c);
+    }
+    if(board.length!==0 && board.length<3){
+      errEl.textContent = "Renseigne au moins le flop (3 cartes), ou laisse le board vide pour un calcul préflop.";
+      return;
+    }
+
+    var allUsed = [a1,a2,b1,b2].concat(board);
+    var seen = {};
+    for(var k=0;k<allUsed.length;k++){
+      var key = cardKey(allUsed[k]);
+      if(seen[key]){ errEl.textContent = "Une carte est utilisée deux fois — vérifie ta sélection."; return; }
+      seen[key]=true;
+    }
+
+    loadEl.style.display = 'block';
+    setTimeout(function(){
+      var deck = fullDeck().filter(function(c){ return !seen[cardKey(c)]; });
+      var trials = 2500;
+      var winA=0, winB=0, tie=0;
+      var needed = 5 - board.length;
+      for(var t=0;t<trials;t++){
+        var shuffled = shuffle(deck.slice());
+        var fullBoard = board.concat(shuffled.slice(0,needed));
+        var scoreA = evaluate7([a1,a2].concat(fullBoard));
+        var scoreB = evaluate7([b1,b2].concat(fullBoard));
+        var cmp = compareScore(scoreA, scoreB);
+        if(cmp>0) winA++; else if(cmp<0) winB++; else tie++;
+      }
+      loadEl.style.display = 'none';
+      resEl.style.display = 'block';
+      var pA = (winA/trials*100), pB=(winB/trials*100), pT=(tie/trials*100);
+      var segA = document.getElementById('eqSegA');
+      var segT = document.getElementById('eqSegTie');
+      var segB = document.getElementById('eqSegB');
+      segA.style.width = pA+'%'; segA.textContent = pA.toFixed(1)+'%';
+      segT.style.width = pT+'%'; segT.textContent = pT>4 ? pT.toFixed(1)+'%' : '';
+      segB.style.width = pB+'%'; segB.textContent = pB.toFixed(1)+'%';
+    }, 30);
+  }
+
+  /* ============================================================
+     EVENT WIRING
+  ============================================================ */
+  function wireEvents(){
+    document.querySelectorAll('.rail-btn').forEach(function(btn){
+      btn.addEventListener('click', function(){
+        document.querySelectorAll('.rail-btn').forEach(function(b){b.classList.remove('active');});
+        btn.classList.add('active');
+        document.querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active');});
+        document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+        if(btn.dataset.tab==='sheet') renderSheet();
+      });
+    });
+
+    document.getElementById('profileSelect').addEventListener('change', function(e){
+      state.activeProfileId = e.target.value;
+      renderGrid(); renderSheet(); scheduleSave();
+    });
+    document.getElementById('newProfileBtn').addEventListener('click', function(){
+      var name = prompt("Nom du nouveau profil :", "Nouveau profil");
+      if(!name) return;
+      var p = makeProfile(name);
+      state.profiles.push(p);
+      state.activeProfileId = p.id;
+      renderProfileSelect(); renderGrid(); renderSheet(); scheduleSave();
+    });
+    document.getElementById('deleteProfileBtn').addEventListener('click', function(){
+      if(state.profiles.length<=1){ alert("Il doit rester au moins un profil."); return; }
+      if(!confirm("Supprimer ce profil définitivement ?")) return;
+      state.profiles = state.profiles.filter(function(p){return p.id!==state.activeProfileId;});
+      state.activeProfileId = state.profiles[0].id;
+      renderProfileSelect(); renderGrid(); renderSheet(); scheduleSave();
+    });
+
+    document.getElementById('scenarioSelect').addEventListener('change', function(e){
+      ui.activeScenario = e.target.value;
+      renderGrid();
+    });
+    document.getElementById('loadStandardBtn').addEventListener('click', function(){
+      if(ui.activeScenario!=='open'){ alert("Les ranges standards sont disponibles pour le scénario 'Open (RFI)'."); return; }
+      applyStandardRange(ui.activePosition);
+      renderGrid();
+    });
+    document.getElementById('clearGridBtn').addEventListener('click', function(){
+      if(!confirm("Vider la grille active ?")) return;
+      activeProfile().ranges[ui.activePosition][ui.activeScenario] = {};
+      renderGrid(); scheduleSave();
+    });
+
+    document.querySelectorAll('.brush').forEach(function(b){
+      b.addEventListener('click', function(){
+        document.querySelectorAll('.brush').forEach(function(x){x.classList.remove('active');});
+        b.classList.add('active');
+        ui.activeBrush = b.dataset.b;
+      });
+    });
+
+    ['ctxFormat','ctxTableSize','ctxStage','ctxSpeed','ctxRake','ctxOpponents'].forEach(function(id){
+      document.getElementById(id).addEventListener('change', function(e){
+        var key = id.replace('ctx','');
+        key = key.charAt(0).toLowerCase()+key.slice(1);
+        state.context[key] = e.target.value;
+        toggleContextFields(); renderContextTip(); scheduleSave();
+      });
+    });
+    document.getElementById('ctxAntes').addEventListener('change', function(e){
+      state.context.antes = e.target.checked;
+      renderContextTip(); scheduleSave();
+    });
+
+    document.getElementById('addNoteBtn').addEventListener('click', function(){ openNoteForm(null); });
+    document.getElementById('cancelNoteBtn').addEventListener('click', function(){
+      document.getElementById('noteForm').style.display='none';
+    });
+    document.getElementById('saveNoteBtn').addEventListener('click', function(){
+      var name = document.getElementById('noteName').value.trim();
+      if(!name){ alert("Le nom / pseudo est requis."); return; }
+      var tags = document.getElementById('noteTags').value.trim();
+      var text = document.getElementById('noteText').value.trim();
+      if(ui.editingNoteId){
+        var n = state.playerNotes.filter(function(x){return x.id===ui.editingNoteId;})[0];
+        n.name=name; n.tags=tags; n.notes=text;
+      } else {
+        state.playerNotes.push({id:uid(), name:name, tags:tags, notes:text});
+      }
+      document.getElementById('noteForm').style.display='none';
+      renderNotes(); renderSheet(); scheduleSave();
+    });
+
+    ['setOpen','set3bet','set4bet'].forEach(function(id){
+      document.getElementById(id).addEventListener('input', function(e){
+        var map = {setOpen:'open',set3bet:'threebet',set4bet:'fourbet'};
+        state.settings[map[id]] = e.target.value;
+        scheduleSave();
+      });
+    });
+
+    document.getElementById('themeToggle').addEventListener('click', function(){
+      state.theme = state.theme==='light' ? 'dark' : 'light';
+      applyTheme();
+      scheduleSave();
+    });
+
+    document.getElementById('printBtn').addEventListener('click', function(){ window.print(); });
+    document.getElementById('calcEquityBtn').addEventListener('click', runEquityCalc);
+  }
+
+  document.addEventListener('DOMContentLoaded', function(){
+    wireEvents();
+    loadState();
+  });
+})();
+</script>
+</body>
+</html>
