@@ -158,6 +158,7 @@
 
   /* ---------- MAIN ---------- */
   main{padding:36px 44px 80px;max-width:1180px;}
+  .mobile-topbar{display:none;}
   .tab-panel{display:none;}
   .tab-panel.active{display:block;animation:fadein 0.25s ease;}
   @keyframes fadein{from{opacity:0;transform:translateY(4px);}to{opacity:1;transform:none;}}
@@ -269,7 +270,7 @@
     width:560px;
     max-width:100%;
     user-select:none;
-    touch-action:pan-y;
+    touch-action:none;
   }
   .cell{
     aspect-ratio:1/1;
@@ -408,18 +409,76 @@
   }
 
   @media (max-width:640px){
-    #app{grid-template-columns:56px 1fr;}
-    .rail{width:56px;padding:14px 0;}
-    .rail-brand{width:38px;height:38px;margin-bottom:16px;}
-    .mon-suit{font-size:10px;}
-    .brand-name{font-size:9px;letter-spacing:0.12em;margin-bottom:14px;}
-    .rail-btn{width:44px;font-size:8.5px;padding:9px 2px;}
-    .rail-btn .sym{font-size:16px;}
-    main{padding:20px 14px 70px;}
-    h1{font-size:24px;}
-    .grid13{grid-template-columns:repeat(13, minmax(24px,1fr));}
-    .cell{font-size:9.5px;}
-    .save-indicator{width:58px;height:58px;font-size:10.5px;bottom:16px;right:16px;}
+    #app{grid-template-columns:1fr;}
+
+    .rail{
+      position:fixed;left:0;right:0;bottom:0;top:auto;
+      width:100%;height:auto;
+      flex-direction:row;justify-content:space-around;align-items:center;
+      padding:6px 2px calc(6px + env(safe-area-inset-bottom));
+      gap:0;
+      border-right:none;border-top:1px solid var(--line);
+      background:var(--felt);
+      z-index:70;
+    }
+    .rail-brand, .brand-name{display:none;}
+    .rail-btn{
+      width:auto;flex:1;max-width:84px;
+      padding:7px 2px;font-size:10px;
+      border-radius:12px;
+      min-height:52px;justify-content:center;
+    }
+    .rail-btn .sym{font-size:19px;}
+    .rail-btn.active{box-shadow:none;background:rgba(201,162,78,0.22);}
+
+    .mobile-topbar{
+      display:flex;align-items:center;gap:10px;
+      padding:0 0 18px;
+    }
+    .mobile-topbar .rail-brand{
+      display:block;width:34px;height:34px;margin:0;
+    }
+    .mobile-topbar .mon-suit{font-size:9px;}
+    .mobile-topbar .app-name{
+      font-family:var(--font-display);font-weight:600;font-size:15px;
+      color:var(--gold-bright);letter-spacing:0.04em;
+    }
+
+    main{padding:18px 16px calc(96px + env(safe-area-inset-bottom));}
+    .page-head{margin-bottom:20px;}
+    h1{font-size:23px;margin-bottom:12px;padding-bottom:12px;}
+    .subtitle{font-size:13.5px;}
+    .card{padding:18px 16px;border-radius:12px;}
+    .card + .card{margin-top:14px;}
+    .card h2{font-size:17.5px;}
+
+    /* prevent iOS Safari from zooming the page on input focus */
+    .field select, .field input, .field textarea, select.plain,
+    #handA select, #handB select, .board-slot select{
+      font-size:16px;
+    }
+
+    .controls-row{gap:8px;}
+    .seg{width:100%;justify-content:space-between;}
+    .seg button{flex:1;text-align:center;padding:9px 4px;}
+    select.plain{width:100%;}
+    .btn.small{padding:9px 12px;font-size:12.5px;min-height:38px;}
+
+    .brush{flex:1;justify-content:center;min-width:88px;}
+
+    .grid13{grid-template-columns:repeat(13, minmax(23px,1fr));gap:2px;}
+    .cell{font-size:10px;}
+    .stats-panel{width:100%;}
+
+    .hand-row{gap:16px;}
+    .hand-block{min-width:100%;}
+    .board-slot{width:64px;}
+
+    .profile-bar{gap:8px;}
+    .profile-select{flex:1;min-width:0;}
+
+    .save-indicator{width:54px;height:54px;font-size:10px;bottom:calc(78px + env(safe-area-inset-bottom));right:14px;}
+    .theme-toggle{top:14px;right:14px;padding:8px 10px;}
   }
 </style>
 </head>
@@ -447,6 +506,16 @@
   </nav>
 
   <main>
+    <div class="mobile-topbar" aria-hidden="true">
+      <div class="rail-brand">
+        <span class="mon-suit" style="--ang:0deg;">♠</span>
+        <span class="mon-suit" style="--ang:90deg;">♥</span>
+        <span class="mon-suit" style="--ang:180deg;">♦</span>
+        <span class="mon-suit" style="--ang:270deg;">♣</span>
+        <span class="mon-suit center">◆</span>
+      </div>
+      <span class="app-name">Samouraï Poker</span>
+    </div>
 
     <!-- ============ RANGES ============ -->
     <section id="tab-ranges" class="tab-panel active">
@@ -474,6 +543,7 @@
           <button class="btn small" id="loadStandardBtn" title="Remplit la grille avec une range d'ouverture standard, à ajuster ensuite">Charger range standard</button>
           <button class="btn small ghost" id="clearGridBtn" title="Efface toutes les couleurs de la grille active">Vider la grille</button>
         </div>
+        <p class="brush-hint" id="positionHint" style="display:none;"></p>
 
         <div class="brush-row">
           <span style="font-size:12.5px;color:var(--card-text-dim);font-weight:600;">Pinceau :</span>
@@ -731,7 +801,7 @@
     CO:["55+","A7s+","K8s+","Q8s+","J8s+","T7s+","97s+","86s+","76s","65s","A9o+","KTo+","QTo+"],
     BTN:["22+","A2s+","K2s+","Q4s+","J6s+","T6s+","96s+","85s+","74s+","64s+","53s+","A2o+","K7o+","Q9o+","J9o+","T9o"],
     SB:["33+","A5s+","K7s+","Q8s+","J8s+","T8s+","97s+","86s+","76s","65s","A7o+","KTo+","QTo+"],
-    BB:[]
+    BB:["44+","A2s+","K5s+","Q7s+","J7s+","T7s+","97s+","86s+","75s+","64s+","54s","A5o+","K9o+","Q9o+","J9o+","T9o"]
   };
 
   /* ============================================================
@@ -754,6 +824,8 @@
     activeScenario:'open',
     activeBrush:'raise',
     painting:false,
+    paintMode:null,
+    lastTouchedCell:null,
     editingNoteId:null
   };
 
@@ -904,36 +976,57 @@
         div.setAttribute('role','gridcell');
         div.tabIndex = 0;
         div.addEventListener('pointerdown', function(ev){
-          ui.painting = true;
-          paintCell(ev.currentTarget);
+          ev.preventDefault();
+          startPaint(ev.currentTarget);
         });
         div.addEventListener('pointerenter', function(ev){
-          if(ui.painting) paintCell(ev.currentTarget);
+          if(ui.painting) applyPaint(ev.currentTarget);
         });
         div.addEventListener('keydown', function(ev){
           if(ev.key==='Enter' || ev.key===' '){
             ev.preventDefault();
-            paintCell(ev.currentTarget);
+            startPaint(ev.currentTarget);
+            ui.painting = false;
           }
         });
         grid.appendChild(div);
       }
     }
-    document.addEventListener('pointerup', function(){ ui.painting=false; });
+
     renderStats();
   }
 
-  function paintCell(el){
+  function endPaint(){
+    ui.painting = false;
+    ui.paintMode = null;
+    ui.lastTouchedCell = null;
+  }
+
+  function startPaint(el){
+    var profile = activeProfile();
+    var data = profile.ranges[ui.activePosition][ui.activeScenario];
+    var label = el.dataset.label;
+    ui.paintMode = (data[label]===ui.activeBrush) ? 'erase' : 'paint';
+    ui.painting = true;
+    ui.lastTouchedCell = el;
+    applyPaint(el);
+  }
+
+  function applyPaint(el){
     var profile = activeProfile();
     var label = el.dataset.label;
     var data = profile.ranges[ui.activePosition][ui.activeScenario];
     var brush = ui.activeBrush;
-    if(data[label]===brush){
-      delete data[label]; // toggle off if clicking same brush again
-      el.className = 'cell' + (label.length===2?' diag':'');
+    if(ui.paintMode==='erase'){
+      if(data[label]===brush){
+        delete data[label];
+        el.className = 'cell' + (label.length===2?' diag':'');
+      }
     } else {
-      data[label] = brush;
-      el.className = 'cell ' + brush + (label.length===2?' diag':'');
+      if(data[label]!==brush){
+        data[label] = brush;
+        el.className = 'cell ' + brush + (label.length===2?' diag':'');
+      }
     }
     renderStats();
     scheduleSave();
@@ -992,6 +1085,17 @@
       });
       seg.appendChild(b);
     });
+    updatePositionHint();
+  }
+
+  function updatePositionHint(){
+    var hint = document.getElementById('positionHint');
+    if(ui.activePosition==='BB' && ui.activeScenario==='open'){
+      hint.textContent = "💡 La BB a déjà misé : sa range \"standard\" ici correspond à une range d'isolation face à un limpeur, pas à une ouverture classique.";
+      hint.style.display = 'block';
+    } else {
+      hint.style.display = 'none';
+    }
   }
 
   /* ============================================================
@@ -1341,6 +1445,24 @@
      EVENT WIRING
   ============================================================ */
   function wireEvents(){
+    document.addEventListener('pointerup', endPaint);
+    document.addEventListener('touchend', endPaint);
+    document.addEventListener('touchcancel', endPaint);
+
+    // Touch devices don't fire pointerenter while dragging (the pointer stays
+    // captured on the cell where the finger first touched down), so we track
+    // the finger's position manually and paint whichever cell is underneath.
+    document.getElementById('grid13').addEventListener('touchmove', function(ev){
+      if(!ui.painting) return;
+      ev.preventDefault();
+      var touch = ev.touches[0];
+      var el = document.elementFromPoint(touch.clientX, touch.clientY);
+      if(el && el.classList.contains('cell') && el!==ui.lastTouchedCell){
+        ui.lastTouchedCell = el;
+        applyPaint(el);
+      }
+    }, {passive:false});
+
     document.querySelectorAll('.rail-btn').forEach(function(btn){
       btn.addEventListener('click', function(){
         document.querySelectorAll('.rail-btn').forEach(function(b){b.classList.remove('active');});
@@ -1374,9 +1496,15 @@
     document.getElementById('scenarioSelect').addEventListener('change', function(e){
       ui.activeScenario = e.target.value;
       renderGrid();
+      updatePositionHint();
     });
     document.getElementById('loadStandardBtn').addEventListener('click', function(){
       if(ui.activeScenario!=='open'){ alert("Les ranges standards sont disponibles pour le scénario 'Open (RFI)'."); return; }
+      var tokens = STANDARD_OPEN[ui.activePosition] || [];
+      if(tokens.length===0){
+        alert("Aucune range standard n'est définie pour cette position/ce scénario pour l'instant. Peins-la manuellement sur la grille.");
+        return;
+      }
       applyStandardRange(ui.activePosition);
       renderGrid();
     });
